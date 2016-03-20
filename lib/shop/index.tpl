@@ -14,7 +14,7 @@
         </a>
 
         <div class="item-info">
-          <button type="submit" style="display: inline!important;" class="single_add_to_cart_button button alt"><%- book.price %> &euro; | Add to cart</button>
+          <button class="hp-add-cart single_add_to_cart_button button alt" data-hp-isbn="<%- book.isbn %>" type="submit" style="display: inline!important;"><%- book.price %> &euro; | Add to cart</button>
           <h2 style="margin-top: 5px; font-size: 1em"><%- book.title %></h2>
         </div>
     </li>

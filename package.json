@@ -28,6 +28,7 @@
   "dependencies": {
     "ak-eventemitter": "0.0.5",
     "ak-template": "0.0.3",
+    "dom-delegate": "^2.0.3",
     "henri-potier-store": "git+https://github.com/92bondstreet/henri-potier-store.git",
     "superagent": "^1.8.1"
   }

@@ -451,7 +451,7 @@
     "no-trailing-spaces": 2,
 
     // disallow dangling underscores in identifiers
-    "no-underscore-dangle": 2,
+    "no-underscore-dangle": 0,
 
     // disallow the use of Boolean literals in conditional expressions (off by default)
     "no-unneeded-ternary": 2,
