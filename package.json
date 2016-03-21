@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "mkdir -p public/dist/ && browserify -t brfs index.js -o public/dist/index.js",
+    "dist": "mkdir -p public/dist/ && browserify -t brfs -g uglifyify index.js -o public/dist/index.js",
     "test-only": "ava --tap | tap-diff",
     "test": "./node_modules/.bin/nyc --check-coverage --lines 80 --functions 80 --branches 80 npm run test-only; ./node_modules/.bin/nyc report --reporter=html",
     "open": "./node_modules/.bin/opn ./coverage/index.html"

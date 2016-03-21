@@ -9,7 +9,9 @@ Henri Potier bookstore with random special offers.
 ## Installation
 
 ```sh
-npm i
+❯ git clone https://github.com/92bondstreet/henri-potier.git
+❯ cd henri-potier
+❯ npm i
 # open ./public/index.html
 ```
 

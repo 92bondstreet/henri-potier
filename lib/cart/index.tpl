@@ -19,7 +19,7 @@
                 <% var item = items[index]; %>
                   <tr class="cart_item" data-hp-isbn="<%- item.isbn %>">
 
-                    <td class="product-thumbnail" width="240" height="200">
+                    <td class="product-thumbnail" width="120" height="100">
                       <a href="javascript:void(0);"><img src="<%- item.cover %>" class="attachment-shop_thumbnail wp-post-image" alt="<%- ~~item.title %>" /></a>
                     </td>
 
@@ -34,25 +34,20 @@
 
                     <td class="product-quantity">
                       <div class="quantity">
-                        <input type="text" step="1" min="0" name="cart[f57a2f557b098c43f11ab969efe1504b][qty]" value="<%- item.quantity %>" title="Qty" class="input-text qty text" size="4" />
+                        <input data-hp-quantity-<%- item.isbn %> type="text" step="1" min="0" value="<%- item.quantity %>" title="Qty" class="hp-input-quantity input-text qty text" size="4" />
                         <div class="qty-adjust">
-                          <a href="javascript:void(0);" class="fa fa-angle-up"></a>
-                          <a href="javascript:void(0);" class="fa fa-angle-down"></a>
+                          <a href="javascript:void(0);" class="hp-plus-one fa fa-angle-up"></a>
+                          <a href="javascript:void(0);" class="hp-minus-one fa fa-angle-down"></a>
                         </div>
                       </div>
                     </td>
 
                     <td class="product-subtotal">
-                      <span class="hp-amount amount"><%- ~~item.quantity * ~~item.price%> &euro;</span> </td>
-                    <td class="product-remove">
+                      <span data-hp-amount-<%- item.isbn %> class="hp-amount amount" data-hp-price="<%- ~~item.price %>"><%- ~~item.quantity * ~~item.price%> &euro;</span> </td>
+                    <td class="hp-remove product-remove">
                       <a href="javascript:void(0);" class="remove" title="Remove this item">x</a> </td>
                   </tr>
                   <% } %>
-                    <tr>
-                      <td colspan="6" class="actions">
-                        <button class="button" name="update_cart">Update Cart</button>
-                    </tr>
-
           </tbody>
         </table>
 
