@@ -7,55 +7,199 @@ let view = new HenriPotier();
 view.run();
 
 },{"./lib/henri-potier":3}],2:[function(require,module,exports){
+/*eslint-disable space-unary-ops */
 'use strict';
 
+let Delegate = require('dom-delegate');
 let EventEmitter = require('ak-eventemitter');
 
 let path = require('path');
 let template = require('ak-template');
 
-module.exports = class Shop extends EventEmitter {
+module.exports = class Cart extends EventEmitter {
   constructor () {
     super();
 
     this.element = null;
-    this.template = template("<article class=\"woocommerce-cart page type-page status-publish hentry language-en\">\n  <div class=\"entry-content static-content\">\n    <div class=\"woocommerce\">\n        <table class=\"shop_table cart\" cellspacing=\"0\">\n          <thead>\n            <tr>\n\n              <th class=\"product-thumbnail\">&nbsp;</th>\n              <th class=\"product-name\">Product</th>\n              <th class=\"product-price\">Price</th>\n              <th class=\"product-quantity\">Quantity</th>\n              <th class=\"product-subtotal\">Total</th>\n              <th class=\"product-remove\">&nbsp;</th>\n            </tr>\n          </thead>\n          <tbody>\n            <% var items = locals.items || []; %>\n              <% for (var index=0, length=items.length; index < length; index++) { %>\n                <% var item = items[index]; %>\n                  <tr class=\"cart_item\" data-hp-isbn=\"<%- item.isbn %>\">\n\n                    <td class=\"product-thumbnail\" width=\"240\" height=\"200\">\n                      <a href=\"javascript:void(0);\"><img src=\"<%- item.cover %>\" class=\"attachment-shop_thumbnail wp-post-image\" alt=\"<%- ~~item.title %>\" /></a>\n                    </td>\n\n                    <td class=\"product-name\">\n                      <spans>\n                        <%- item.title %>\n                          </span>\n                    </td>\n\n                    <td class=\"product-price\">\n                      <span class=\"amount\"><%- item.price %> &euro;</span> </td>\n\n                    <td class=\"product-quantity\">\n                      <div class=\"quantity\">\n                        <input type=\"text\" step=\"1\" min=\"0\" name=\"cart[f57a2f557b098c43f11ab969efe1504b][qty]\" value=\"<%- item.quantity %>\" title=\"Qty\" class=\"input-text qty text\" size=\"4\" />\n                        <div class=\"qty-adjust\">\n                          <a href=\"javascript:void(0);\" class=\"fa fa-angle-up\"></a>\n                          <a href=\"javascript:void(0);\" class=\"fa fa-angle-down\"></a>\n                        </div>\n                      </div>\n                    </td>\n\n                    <td class=\"product-subtotal\">\n                      <span class=\"hp-amount amount\"><%- ~~item.quantity * ~~item.price%> &euro;</span> </td>\n                    <td class=\"product-remove\">\n                      <a href=\"javascript:void(0);\" class=\"remove\" title=\"Remove this item\">x</a> </td>\n                  </tr>\n                  <% } %>\n                    <tr>\n                      <td colspan=\"6\" class=\"actions\">\n                        <button class=\"button\" name=\"update_cart\">Update Cart</button>\n                    </tr>\n\n          </tbody>\n        </table>\n\n\n\n      <div hp-zone-total class=\"cart-collaterals\">\n\n      </div>\n\n    </div>\n  </div>\n</article>\n");
+    this.delegate = new Delegate(document.body);
+    this.template = template("<article class=\"woocommerce-cart page type-page status-publish hentry language-en\">\n  <div class=\"entry-content static-content\">\n    <div class=\"woocommerce\">\n        <table class=\"shop_table cart\" cellspacing=\"0\">\n          <thead>\n            <tr>\n\n              <th class=\"product-thumbnail\">&nbsp;</th>\n              <th class=\"product-name\">Product</th>\n              <th class=\"product-price\">Price</th>\n              <th class=\"product-quantity\">Quantity</th>\n              <th class=\"product-subtotal\">Total</th>\n              <th class=\"product-remove\">&nbsp;</th>\n            </tr>\n          </thead>\n          <tbody>\n            <% var items = locals.items || []; %>\n              <% for (var index=0, length=items.length; index < length; index++) { %>\n                <% var item = items[index]; %>\n                  <tr class=\"cart_item\" data-hp-isbn=\"<%- item.isbn %>\">\n\n                    <td class=\"product-thumbnail\" width=\"120\" height=\"100\">\n                      <a href=\"javascript:void(0);\"><img src=\"<%- item.cover %>\" class=\"attachment-shop_thumbnail wp-post-image\" alt=\"<%- ~~item.title %>\" /></a>\n                    </td>\n\n                    <td class=\"product-name\">\n                      <spans>\n                        <%- item.title %>\n                          </span>\n                    </td>\n\n                    <td class=\"product-price\">\n                      <span class=\"amount\"><%- item.price %> &euro;</span> </td>\n\n                    <td class=\"product-quantity\">\n                      <div class=\"quantity\">\n                        <input data-hp-quantity-<%- item.isbn %> type=\"text\" step=\"1\" min=\"0\" value=\"<%- item.quantity %>\" title=\"Qty\" class=\"hp-input-quantity input-text qty text\" size=\"4\" />\n                        <div class=\"qty-adjust\">\n                          <a href=\"javascript:void(0);\" class=\"hp-plus-one fa fa-angle-up\"></a>\n                          <a href=\"javascript:void(0);\" class=\"hp-minus-one fa fa-angle-down\"></a>\n                        </div>\n                      </div>\n                    </td>\n\n                    <td class=\"product-subtotal\">\n                      <span data-hp-amount-<%- item.isbn %> class=\"hp-amount amount\" data-hp-price=\"<%- ~~item.price %>\"><%- ~~item.quantity * ~~item.price%> &euro;</span> </td>\n                    <td class=\"hp-remove product-remove\">\n                      <a href=\"javascript:void(0);\" class=\"remove\" title=\"Remove this item\">x</a> </td>\n                  </tr>\n                  <% } %>\n          </tbody>\n        </table>\n\n\n\n      <div hp-zone-total class=\"cart-collaterals\">\n\n      </div>\n\n    </div>\n  </div>\n</article>\n");
     this.partials = {
       'empty': template("<article class=\"page type-page status-publish hentry language-en\">\n  <div class=\"entry-content static-content\">\n    <div class=\"woocommerce\">\n      <p class=\"cart-empty\">Your cart is currently empty.</p>\n\n\n      <p class=\"return-to-shop\"><a class=\"button wc-backward\" href=\"http://92bondstreet.github.io/henri-potier\">Return To Shop</a></p>\n    </div>\n  </div>\n</article>\n"),
-      'total': template("<div class=\"cart_totals \">\n\n  <h2>Cart Totals</h2>\n  <div class=\"cart_totals_wrap\">\n    <table cellspacing=\"0\">\n\n      <tbody>\n        <tr class=\"cart-subtotal\">\n          <th>Was</th>\n          <td><del><span class=\"amount\"><%- locals.was %> &euro;</span></del></td>\n        </tr>\n\n\n        <tr class=\"order-total\">\n          <th>Total</th>\n          <td><strong><span class=\"amount\"><%- locals.now %> &euro;</span></strong> </td>\n        </tr>\n\n\n      </tbody>\n\n    </table>\n  </div>\n\n</div>\n")
+      'total': template("<div class=\"cart_totals \">\n\n  <h2>Cart Totals</h2>\n  <div class=\"cart_totals_wrap\">\n    <table cellspacing=\"0\">\n\n      <tbody>\n        <tr class=\"cart-subtotal\">\n          <th>Was</th>\n          <td><del><span class=\"amount\"><%- locals.was || 0 %> &euro;</span></del></td>\n        </tr>\n\n\n        <tr class=\"order-total\">\n          <th>Total</th>\n          <td><strong><span class=\"amount\"><%- locals.now || 0%> &euro;</span></strong> </td>\n        </tr>\n\n\n      </tbody>\n\n    </table>\n  </div>\n\n</div>\n")
     };
+
+    this.listen();
   }
 
   /**
-   * Render the books shop
+   * Listen events
+   *
+   * @return {Cart}
+   */
+  listen () {
+    this.delegate.on('input', '.hp-input-quantity', (event, target) => {
+      this.onInputQuantity(target);
+    });
+
+    this.delegate.on('click', '.hp-plus-one', (event, target) => {
+      this.onClickQuantity(target, true);
+    });
+
+    this.delegate.on('click', '.hp-minus-one', (event, target) => {
+      this.onClickQuantity(target, false);
+    });
+
+    this.delegate.on('click', '.hp-remove', (event, target) => {
+      this.remove(target);
+    });
+
+    return this;
+  }
+
+  /**
+   * Get the isbn of current item
+   *
+   * @param  {Element} target
+   * @return {String}
+   */
+  getIsbn (target) {
+    const root = target.closest('[data-hp-isbn]');
+
+    return root.getAttribute('data-hp-isbn');
+  }
+
+  /**
+   * Get input according data
+   *
+   * @param  {String} what
+   * @param  {String} isbn
+   * @return {Element}
+   */
+  getInput (what, isbn) {
+    return document.querySelector(`[data-hp-${what}-${isbn}]`);
+  }
+
+  /**
+   * Set quantity value
+   * @param {Element} dom
+   * @param {Integer} value
+   * @return {Cart}
+   */
+  setQuantity (dom, value) {
+    dom.value = value;
+    dom.dispatchEvent(new Event('input', {'bubbles': true}));
+
+    return this;
+  }
+
+  /**
+   * Render the cart
    *
    * @param {Object} data
-   * @return {Shop}
+   * @return {Cart}
    */
   render (data = {}) {
     this.emit('rendering');
 
+    //total order with best special offer
+    const totalOrder = data.total || {};
+
     if (! data.items || ! data.items.length) {
       this.element = this.partials.empty();
-    }
-
-    if (! this.element) {
+    } else {
       this.element = this.template(data);
     }
+
+    //set element to zone cart
+    this.set('content', this.element);
+    this.set('total', this.partials.total(totalOrder));
+    this.emit('render');
+
+    return this;
+  }
+
+  update (data = {}) {
+    this.emit('updating');
 
     //total order with best special offer
     const totalOrder = data.total || {};
 
-    //set element to zone cart
-    document.querySelector('[hp-zone-content]').innerHTML = this.element;
-    document.querySelector('[hp-zone-total]').innerHTML = this.partials.total(totalOrder);
-    this.emit('render');
+    this.set('total', this.partials.total(totalOrder));
+
+    this.emit('update');
+
+    return this;
+  }
+
+  /**
+   * Set HTML DOM to a zone
+   *
+   * @param  {String} zone
+   * @param  {Element} dom
+   * @return {Cart}
+   */
+  set (zone, dom) {
+    let attribute = document.querySelector(`[hp-zone-${zone}]`) || {};
+
+    attribute.innerHTML = dom;
+
+    return this;
+  }
+
+  /**
+   * Update quantity for the current item
+   *
+   * @param {Element} target
+   * @param {Cart}
+   */
+  onInputQuantity (target) {
+    const quantity = target.value;
+    const isbn = this.getIsbn(target);
+    let amount = this.getInput('amount', isbn);
+    const price = amount.getAttribute('data-hp-price');
+
+    amount.innerHTML = `${quantity * price} &euro;`;
+    this.emit('cart.item.quantity', isbn, quantity);
+
+    return this;
+  }
+
+  /**
+   * Modify quantity
+   *
+   * @param  {Element} target
+   * @return {Cart}
+   */
+  onClickQuantity (target, add = true) {
+    const isbn = this.getIsbn(target);
+    const increment = add ? 1 : - 1;
+    let quantity = this.getInput('quantity', isbn);
+    let value = ~~quantity.value + increment;
+
+    value = value < 0 ? 0 : value;
+    this.setQuantity(quantity, value);
+
+    return this;
+  }
+
+  /**
+   * Remove item from cart
+   *
+   * @param  {Event} event
+   * @param  {Element} target
+   * @return {Cart}
+   */
+  remove (target) {
+    const isbn = this.getIsbn(target);
+    let quantity = this.getInput('quantity', isbn);
+
+    this.setQuantity(quantity, 0);
 
     return this;
   }
 };
 
-},{"ak-eventemitter":6,"ak-template":8,"path":11}],3:[function(require,module,exports){
+},{"ak-eventemitter":6,"ak-template":8,"dom-delegate":14,"path":11}],3:[function(require,module,exports){
 'use strict';
 
 let Cart = require('./cart');
@@ -99,6 +243,10 @@ module.exports = class HenriPotier extends EventEmitter {
       this.openCart();
     });
 
+    this.cart.on('cart.item.quantity', (ns, isbn, quantity) => {
+      this.change(isbn, quantity);
+    });
+
     return this;
   }
 
@@ -127,10 +275,40 @@ module.exports = class HenriPotier extends EventEmitter {
     order(items)
       .then(total => {
         this.cart.render({
-          'items': this.items.toJSON(),
+          'items': items,
           'total': total
         });
       });
+
+    return this;
+  }
+
+  /**
+   * Update cart
+   * @return {HenriPotier}
+   */
+  updateCart () {
+    const items = this.items.toJSON();
+
+    order(items)
+      .then(total => {
+        this.cart.update({
+          'total': total
+        });
+      });
+
+    return this;
+  }
+
+  /**
+   * Change item quantity
+   * @param  {[type]} isbn     [description]
+   * @param  {[type]} quantity [description]
+   * @return {[type]}          [description]
+   */
+  change (isbn, quantity) {
+    this.items.update(isbn, quantity);
+    this.updateCart();
 
     return this;
   }
@@ -211,6 +389,22 @@ module.exports = class Items {
   }
 
   /**
+   * Update a book to cart
+   *
+   * @param {String} isbn
+   * @param {Integer} quantity
+   * @return {Items}
+   */
+  update (isbn, quantity = 1) {
+    let book = this._cart.get(isbn) || this.book(isbn);
+
+    book.quantity = quantity;
+    this._cart.set(isbn, book);
+
+    return this;
+  }
+
+  /**
    * Get JSON
    * @return {Array}
    */
@@ -218,7 +412,9 @@ module.exports = class Items {
     let json = [];
 
     this._cart.forEach(current => {
-      json.push(current);
+      if (current.quantity > 0) {
+        json.push(current);
+      }
     });
 
     return json;
@@ -1607,9 +1803,14 @@ let total = require('./helpers/total');
  * @return {Promise}
  */
 module.exports = function order (cart) {
-  const url = `http://henri-potier.xebia.fr/books/${isbn(cart)}/commercialOffers`;
-
   return new Promise((resolve, reject) => {
+    //break for empty cart
+    if (! cart || ! cart.length) {
+      return resolve([]);
+    }
+
+    const url = `http://henri-potier.xebia.fr/books/${isbn(cart)}/commercialOffers`;
+
     request
     .get(url)
     .end((err, res) => {
