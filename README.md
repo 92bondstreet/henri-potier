@@ -22,6 +22,7 @@ Henri Potier bookstore with random special offers.
 * Update cart badge according items number
 * Display cart items with original and new price (according best offer)
 * Update cart items quantity
+* Load cart for persistency from LocalForage
 
 ## Template
 

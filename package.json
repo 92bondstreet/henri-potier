@@ -8,7 +8,6 @@
   },
   "scripts": {
     "build": "mkdir -p public/dist/ && browserify -t brfs index.js -o public/dist/index.js",
-    "dist": "mkdir -p public/dist/ && browserify -t brfs -g uglifyify index.js -o public/dist/index.js",
     "test-only": "ava --tap | tap-diff",
     "test": "./node_modules/.bin/nyc --check-coverage --lines 80 --functions 80 --branches 80 npm run test-only; ./node_modules/.bin/nyc report --reporter=html",
     "open": "./node_modules/.bin/opn ./coverage/index.html"
@@ -23,14 +22,14 @@
     "nyc": "^6.0.0",
     "opn-cli": "^3.1.0",
     "superagent-mocker": "^0.3.0",
-    "tap-diff": "^0.1.1",
-    "uglifyjs": "^2.4.10"
+    "tap-diff": "^0.1.1"
   },
   "dependencies": {
     "ak-eventemitter": "0.0.5",
     "ak-template": "0.0.3",
     "dom-delegate": "^2.0.3",
     "henri-potier-store": "git+https://github.com/92bondstreet/henri-potier-store.git",
+    "localforage": "^1.4.0",
     "superagent": "^1.8.1"
   }
 }
