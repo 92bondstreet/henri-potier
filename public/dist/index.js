@@ -6,7 +6,7 @@ let view = new HenriPotier();
 
 view.run();
 
-},{"./lib/henri-potier":3}],2:[function(require,module,exports){
+},{"./lib/henri-potier":4}],2:[function(require,module,exports){
 /*eslint-disable space-unary-ops */
 'use strict';
 
@@ -199,10 +199,46 @@ module.exports = class Cart extends EventEmitter {
   }
 };
 
-},{"ak-eventemitter":6,"ak-template":8,"dom-delegate":14,"path":11}],3:[function(require,module,exports){
+},{"ak-eventemitter":7,"ak-template":9,"dom-delegate":15,"path":12}],3:[function(require,module,exports){
+'use strict';
+
+let EventEmitter = require('ak-eventemitter');
+
+module.exports = class Core extends EventEmitter {
+  constructor () {
+    super();
+
+    this.listen();
+  }
+
+  /**
+   * Listen events
+   *
+   * @return {Core}
+   */
+  listen () {
+    this.on('shop.update.quantity', (ns, value) => {
+      this.quantity = value;
+    });
+
+    return this;
+  }
+
+  /**
+   * Set quantity
+   *
+   * @param  {String} value
+   */
+  set quantity (value) {
+    document.querySelector('.hp-cart-total-item').innerHTML = value;
+  }
+};
+
+},{"ak-eventemitter":7}],4:[function(require,module,exports){
 'use strict';
 
 let Cart = require('./cart');
+let Core = require('./core');
 let EventEmitter = require('ak-eventemitter');
 let Items = require('./items');
 let Shop = require('./shop');
@@ -222,6 +258,7 @@ module.exports = class HenriPotier extends EventEmitter {
     super();
 
     this.cart = new Cart();
+    this.core = new Core();
     this.shop = new Shop();
     this.items = new Items();
 
@@ -236,7 +273,7 @@ module.exports = class HenriPotier extends EventEmitter {
   listen () {
     this.shop.on('shop.add', (ns, isbn) => {
       this.items.add(isbn);
-      this.shop.emit('shop.update.quantity', this.items.quantity);
+      this.core.emit('shop.update.quantity', this.items.quantity);
     });
 
     this.shop.on('shop.cart.open', () => {
@@ -308,13 +345,15 @@ module.exports = class HenriPotier extends EventEmitter {
    */
   change (isbn, quantity) {
     this.items.update(isbn, quantity);
+    this.core.emit('shop.update.quantity', this.items.quantity);
     this.updateCart();
 
     return this;
   }
 };
 
-},{"./cart":2,"./items":4,"./shop":5,"ak-eventemitter":6,"henri-potier-store":15}],4:[function(require,module,exports){
+},{"./cart":2,"./core":3,"./items":5,"./shop":6,"ak-eventemitter":7,"henri-potier-store":16}],5:[function(require,module,exports){
+/*eslint-disable space-unary-ops */
 'use strict';
 
 module.exports = class Items {
@@ -337,7 +376,7 @@ module.exports = class Items {
     let total = 0;
 
     this._cart.forEach(item => {
-      total += item.quantity;
+      total += ~~item.quantity;
     });
 
     return total;
@@ -421,7 +460,7 @@ module.exports = class Items {
   }
 };
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 let Delegate = require('dom-delegate');
@@ -455,20 +494,7 @@ module.exports = class Shop extends EventEmitter {
       this.emit('shop.cart.open');
     });
 
-    this.on('shop.update.quantity', (ns, value) => {
-      this.quantity = value;
-    });
-
     return this;
-  }
-
-  /**
-   * Set quantity
-   *
-   * @param  {String} value
-   */
-  set quantity (value) {
-    document.querySelector('.hp-cart-total-item').innerHTML = value;
   }
 
   /**
@@ -506,10 +532,10 @@ module.exports = class Shop extends EventEmitter {
   }
 };
 
-},{"ak-eventemitter":6,"ak-template":8,"dom-delegate":14,"path":11}],6:[function(require,module,exports){
+},{"ak-eventemitter":7,"ak-template":9,"dom-delegate":15,"path":12}],7:[function(require,module,exports){
 module.exports = require('./lib/eventemitter');
 
-},{"./lib/eventemitter":7}],7:[function(require,module,exports){
+},{"./lib/eventemitter":8}],8:[function(require,module,exports){
 'use strict';
 
 /**
@@ -750,10 +776,10 @@ EventEmitter.prototype.once = function (ns, callback, context) {
   return this;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = require('./lib/template');
 
-},{"./lib/template":9}],9:[function(require,module,exports){
+},{"./lib/template":10}],10:[function(require,module,exports){
 'use strict';
 
 /**
@@ -826,7 +852,7 @@ template.escape = function (str) {
     .replace(/'/g, '&#39');
 };
 
-},{"stluafed":10}],10:[function(require,module,exports){
+},{"stluafed":11}],11:[function(require,module,exports){
 'use strict';
 
 /**
@@ -854,7 +880,7 @@ var defaults = function (dest, src, recursive) {
  */
 module.exports = defaults;
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -1082,7 +1108,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":12}],12:[function(require,module,exports){
+},{"_process":13}],13:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1175,7 +1201,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /*jshint browser:true, node:true*/
 
 'use strict';
@@ -1606,7 +1632,7 @@ Delegate.prototype.destroy = function() {
   this.root();
 };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /*jshint browser:true, node:true*/
 
 'use strict';
@@ -1627,13 +1653,13 @@ module.exports = function(root) {
 
 module.exports.Delegate = Delegate;
 
-},{"./delegate":13}],15:[function(require,module,exports){
+},{"./delegate":14}],16:[function(require,module,exports){
 'use strict';
 
 module.exports.books = require('./lib/books');
 module.exports.order = require('./lib/order');
 
-},{"./lib/books":16,"./lib/order":20}],16:[function(require,module,exports){
+},{"./lib/books":17,"./lib/order":21}],17:[function(require,module,exports){
 'use strict';
 
 let request = require('superagent');
@@ -1657,7 +1683,7 @@ module.exports = function books () {
   });
 };
 
-},{"superagent":21}],17:[function(require,module,exports){
+},{"superagent":22}],18:[function(require,module,exports){
 'use strict';
 
 /**
@@ -1688,7 +1714,7 @@ module.exports = function isbn (cart) {
   }).isbn;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -1731,7 +1757,7 @@ module.exports = {
   }
 };
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 
 let special = require('./special-offers');
@@ -1789,7 +1815,7 @@ module.exports = function total (cart, offers) {
   };
 };
 
-},{"./special-offers":18}],20:[function(require,module,exports){
+},{"./special-offers":19}],21:[function(require,module,exports){
 'use strict';
 
 let isbn = require('./helpers/isbn');
@@ -1822,7 +1848,7 @@ module.exports = function order (cart) {
   });
 };
 
-},{"./helpers/isbn":17,"./helpers/total":19,"superagent":21}],21:[function(require,module,exports){
+},{"./helpers/isbn":18,"./helpers/total":20,"superagent":22}],22:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -2876,7 +2902,7 @@ request.put = function(url, data, fn){
   return req;
 };
 
-},{"./is-object":22,"./request":24,"./request-base":23,"emitter":25,"reduce":27}],22:[function(require,module,exports){
+},{"./is-object":23,"./request":25,"./request-base":24,"emitter":26,"reduce":28}],23:[function(require,module,exports){
 /**
  * Check if `obj` is an object.
  *
@@ -2891,7 +2917,7 @@ function isObject(obj) {
 
 module.exports = isObject;
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /**
  * Module of mixed-in functions shared between node and client code
  */
@@ -3063,7 +3089,7 @@ exports.field = function(name, val) {
   return this;
 };
 
-},{"./is-object":22,"form-data":26}],24:[function(require,module,exports){
+},{"./is-object":23,"form-data":27}],25:[function(require,module,exports){
 // The node and browser modules expose versions of this with the
 // appropriate constructor function bound as first argument
 /**
@@ -3097,7 +3123,7 @@ function request(RequestConstructor, method, url) {
 
 module.exports = request;
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -3260,9 +3286,9 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],26:[function(require,module,exports){
-module.exports = FormData;
 },{}],27:[function(require,module,exports){
+module.exports = FormData;
+},{}],28:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
