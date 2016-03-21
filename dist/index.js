@@ -6,9 +6,54 @@ let view = new HenriPotier();
 
 view.run();
 
-},{"./lib/henri-potier":2}],2:[function(require,module,exports){
+},{"./lib/henri-potier":3}],2:[function(require,module,exports){
 'use strict';
 
+let EventEmitter = require('ak-eventemitter');
+
+let path = require('path');
+let template = require('ak-template');
+
+module.exports = class Shop extends EventEmitter {
+  constructor () {
+    super();
+
+    this.element = null;
+    this.template = template("<article class=\"woocommerce-cart page type-page status-publish hentry language-en\">\n  <div class=\"entry-content static-content\">\n    <div class=\"woocommerce\">\n        <table class=\"shop_table cart\" cellspacing=\"0\">\n          <thead>\n            <tr>\n\n              <th class=\"product-thumbnail\">&nbsp;</th>\n              <th class=\"product-name\">Product</th>\n              <th class=\"product-price\">Price</th>\n              <th class=\"product-quantity\">Quantity</th>\n              <th class=\"product-subtotal\">Total</th>\n              <th class=\"product-remove\">&nbsp;</th>\n            </tr>\n          </thead>\n          <tbody>\n            <% var items = locals.items || []; %>\n              <% for (var index=0, length=items.length; index < length; index++) { %>\n                <% var item = items[index]; %>\n                  <tr class=\"cart_item\" data-hp-isbn=\"<%- item.isbn %>\">\n\n                    <td class=\"product-thumbnail\" width=\"240\" height=\"200\">\n                      <a href=\"javascript:void(0);\"><img src=\"<%- item.cover %>\" class=\"attachment-shop_thumbnail wp-post-image\" alt=\"<%- ~~item.title %>\" /></a>\n                    </td>\n\n                    <td class=\"product-name\">\n                      <spans>\n                        <%- item.title %>\n                          </span>\n                    </td>\n\n                    <td class=\"product-price\">\n                      <span class=\"amount\"><%- item.price %> &euro;</span> </td>\n\n                    <td class=\"product-quantity\">\n                      <div class=\"quantity\">\n                        <input type=\"text\" step=\"1\" min=\"0\" name=\"cart[f57a2f557b098c43f11ab969efe1504b][qty]\" value=\"<%- item.quantity %>\" title=\"Qty\" class=\"input-text qty text\" size=\"4\" />\n                        <div class=\"qty-adjust\">\n                          <a href=\"javascript:void(0);\" class=\"fa fa-angle-up\"></a>\n                          <a href=\"javascript:void(0);\" class=\"fa fa-angle-down\"></a>\n                        </div>\n                      </div>\n                    </td>\n\n                    <td class=\"product-subtotal\">\n                      <span class=\"hp-amount amount\"><%- ~~item.quantity * ~~item.price%> &euro;</span> </td>\n                    <td class=\"product-remove\">\n                      <a href=\"javascript:void(0);\" class=\"remove\" title=\"Remove this item\">x</a> </td>\n                  </tr>\n                  <% } %>\n                    <tr>\n                      <td colspan=\"6\" class=\"actions\">\n                        <button class=\"button\" name=\"update_cart\">Update Cart</button>\n                    </tr>\n\n          </tbody>\n        </table>\n\n\n\n      <div hp-zone-total class=\"cart-collaterals\">\n\n      </div>\n\n    </div>\n  </div>\n</article>\n");
+    this.partials = {
+      'empty': template("<article class=\"page type-page status-publish hentry language-en\">\n  <div class=\"entry-content static-content\">\n    <div class=\"woocommerce\">\n      <p class=\"cart-empty\">Your cart is currently empty.</p>\n\n\n      <p class=\"return-to-shop\"><a class=\"button wc-backward\" href=\"http://92bondstreet.github.io/henri-potier\">Return To Shop</a></p>\n    </div>\n  </div>\n</article>\n")
+    };
+  }
+
+  /**
+   * Render the books shop
+   *
+   * @param {Object} data
+   * @return {Shop}
+   */
+  render (data = {}) {
+    this.emit('rendering');
+
+    if (! data.items || ! data.items.length) {
+      this.element = this.partials.empty();
+    }
+
+    if (! this.element) {
+      this.element = this.template(data);
+    }
+
+    //set element to zone books
+    document.querySelector('[hp-zone-content]').innerHTML = this.element;
+    this.emit('render');
+
+    return this;
+  }
+};
+
+},{"ak-eventemitter":6,"ak-template":8,"path":11}],3:[function(require,module,exports){
+'use strict';
+
+let Cart = require('./cart');
 let EventEmitter = require('ak-eventemitter');
 let Items = require('./items');
 let Shop = require('./shop');
@@ -26,6 +71,7 @@ module.exports = class HenriPotier extends EventEmitter {
   constructor () {
     super();
 
+    this.cart = new Cart();
     this.shop = new Shop();
     this.items = new Items();
 
@@ -34,12 +80,17 @@ module.exports = class HenriPotier extends EventEmitter {
 
   /**
    * Listen events
+   *
    * @return {HenriPotier}
    */
   listen () {
     this.shop.on('shop.add', (ns, isbn) => {
       this.items.add(isbn);
       this.shop.emit('shop.update.quantity', this.items.quantity);
+    });
+
+    this.shop.on('shop.cart.open', () => {
+      this.cart.render({'items': this.items.toJSON()});
     });
 
     return this;
@@ -61,7 +112,7 @@ module.exports = class HenriPotier extends EventEmitter {
   }
 };
 
-},{"./items":3,"./shop":4,"ak-eventemitter":5,"henri-potier-store":14}],3:[function(require,module,exports){
+},{"./cart":2,"./items":4,"./shop":5,"ak-eventemitter":6,"henri-potier-store":15}],4:[function(require,module,exports){
 'use strict';
 
 module.exports = class Items {
@@ -134,9 +185,23 @@ module.exports = class Items {
 
     return this;
   }
+
+  /**
+   * Get JSON
+   * @return {Array}
+   */
+  toJSON () {
+    let json = [];
+
+    this._cart.forEach(current => {
+      json.push(current);
+    });
+
+    return json;
+  }
 };
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
 let Delegate = require('dom-delegate');
@@ -151,21 +216,37 @@ module.exports = class Shop extends EventEmitter {
 
     this.element = null;
     this.delegate = new Delegate(document.body);
-    this.template = template("<ul class=\"product-grid product-listing\">\n  <% var books = locals.books || []; %>\n\n  <% for (var index=0, length=books.length; index < length; index++) { %>\n    <% var book = books[index]; %>\n    <li class=\"grid-item col-lg-3 col-md-3 col-sm-6 col-xs-12\">\n\n      <div class=\"item-wrap\">\n\n        <div class=\"clear\"></div>\n\n        <a href=\"javascript:void(0);\" class=\"item-thumb\" data-hp-isbn=\"<%- book.isbn %>\">\n          <img width=\"340\" height=\"500\" src=\"<%- book.cover %>\" class=\"attachment-shop_catalog wp-post-image\" alt=\"<%- book.title %>\" />\n        </a>\n\n        <div class=\"item-info\">\n          <button class=\"hp-add-cart single_add_to_cart_button button alt\" data-hp-isbn=\"<%- book.isbn %>\" type=\"submit\" style=\"display: inline!important;\"><%- book.price %> &euro; | Add to cart</button>\n          <h2 style=\"margin-top: 5px; font-size: 1em\"><%- book.title %></h2>\n        </div>\n    </li>\n  <% } %>\n</ul>\n");
+    this.template = template("<div class=\"product-listing-layout-3\">\n  <ul class=\"product-grid product-listing\">\n    <% var books = locals.books || []; %>\n\n    <% for (var index=0, length=books.length; index < length; index++) { %>\n      <% var book = books[index]; %>\n      <li class=\"grid-item col-lg-3 col-md-3 col-sm-6 col-xs-12\">\n\n        <div class=\"item-wrap\">\n\n          <div class=\"clear\"></div>\n\n          <a href=\"javascript:void(0);\" class=\"item-thumb\" data-hp-isbn=\"<%- book.isbn %>\">\n            <img width=\"340\" height=\"500\" src=\"<%- book.cover %>\" class=\"attachment-shop_catalog wp-post-image\" alt=\"<%- book.title %>\" />\n          </a>\n\n          <div class=\"item-info\">\n            <button class=\"hp-add-cart single_add_to_cart_button button alt\" data-hp-isbn=\"<%- book.isbn %>\" type=\"submit\" style=\"display: inline!important;\"><%- book.price %> &euro; | Add to cart</button>\n            <h2 style=\"margin-top: 5px; font-size: 1em\"><%- book.title %></h2>\n          </div>\n      </li>\n    <% } %>\n  </ul>\n</div>\n");
 
     this.listen();
   }
 
+  /**
+   * Listen events
+   *
+   * @return {Shop}
+   */
   listen () {
     this.delegate.on('click', '.hp-add-cart', (event) => {
       this.add(event);
     });
 
+    this.delegate.on('click', '.hp-open-cart', () => {
+      this.emit('shop.cart.open');
+    });
+
     this.on('shop.update.quantity', (ns, value) => {
       this.quantity = value;
     });
+
+    return this;
   }
 
+  /**
+   * Set quantity
+   *
+   * @param  {String} value
+   */
   set quantity (value) {
     document.querySelector('.hp-cart-total-item').innerHTML = value;
   }
@@ -184,24 +265,31 @@ module.exports = class Shop extends EventEmitter {
     }
 
     //set element to zone books
-    document.querySelector('[hp-zone-books]').innerHTML = this.element;
+    document.querySelector('[hp-zone-content]').innerHTML = this.element;
     this.emit('render');
 
     return this;
   }
 
+  /**
+   * Add item to cart
+   *
+   * @param {Event} event
+   * @return {Shop}
+   */
   add (event) {
     let isbn = event.target.getAttribute('data-hp-isbn');
 
     this.emit('shop.add', isbn);
+
     return this;
   }
 };
 
-},{"ak-eventemitter":5,"ak-template":7,"dom-delegate":13,"path":10}],5:[function(require,module,exports){
+},{"ak-eventemitter":6,"ak-template":8,"dom-delegate":14,"path":11}],6:[function(require,module,exports){
 module.exports = require('./lib/eventemitter');
 
-},{"./lib/eventemitter":6}],6:[function(require,module,exports){
+},{"./lib/eventemitter":7}],7:[function(require,module,exports){
 'use strict';
 
 /**
@@ -442,10 +530,10 @@ EventEmitter.prototype.once = function (ns, callback, context) {
   return this;
 };
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 module.exports = require('./lib/template');
 
-},{"./lib/template":8}],8:[function(require,module,exports){
+},{"./lib/template":9}],9:[function(require,module,exports){
 'use strict';
 
 /**
@@ -518,7 +606,7 @@ template.escape = function (str) {
     .replace(/'/g, '&#39');
 };
 
-},{"stluafed":9}],9:[function(require,module,exports){
+},{"stluafed":10}],10:[function(require,module,exports){
 'use strict';
 
 /**
@@ -546,7 +634,7 @@ var defaults = function (dest, src, recursive) {
  */
 module.exports = defaults;
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -774,7 +862,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":11}],11:[function(require,module,exports){
+},{"_process":12}],12:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -867,7 +955,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /*jshint browser:true, node:true*/
 
 'use strict';
@@ -1298,7 +1386,7 @@ Delegate.prototype.destroy = function() {
   this.root();
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /*jshint browser:true, node:true*/
 
 'use strict';
@@ -1319,13 +1407,13 @@ module.exports = function(root) {
 
 module.exports.Delegate = Delegate;
 
-},{"./delegate":12}],14:[function(require,module,exports){
+},{"./delegate":13}],15:[function(require,module,exports){
 'use strict';
 
 module.exports.books = require('./lib/books');
 module.exports.order = require('./lib/order');
 
-},{"./lib/books":15,"./lib/order":19}],15:[function(require,module,exports){
+},{"./lib/books":16,"./lib/order":20}],16:[function(require,module,exports){
 'use strict';
 
 let request = require('superagent');
@@ -1349,7 +1437,7 @@ module.exports = function books () {
   });
 };
 
-},{"superagent":20}],16:[function(require,module,exports){
+},{"superagent":21}],17:[function(require,module,exports){
 'use strict';
 
 /**
@@ -1380,7 +1468,7 @@ module.exports = function isbn (cart) {
   }).isbn;
 };
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -1423,7 +1511,7 @@ module.exports = {
   }
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 'use strict';
 
 let special = require('./special-offers');
@@ -1481,7 +1569,7 @@ module.exports = function total (cart, offers) {
   };
 };
 
-},{"./special-offers":17}],19:[function(require,module,exports){
+},{"./special-offers":18}],20:[function(require,module,exports){
 'use strict';
 
 let isbn = require('./helpers/isbn');
@@ -1509,7 +1597,7 @@ module.exports = function order (cart) {
   });
 };
 
-},{"./helpers/isbn":16,"./helpers/total":18,"superagent":20}],20:[function(require,module,exports){
+},{"./helpers/isbn":17,"./helpers/total":19,"superagent":21}],21:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -2563,7 +2651,7 @@ request.put = function(url, data, fn){
   return req;
 };
 
-},{"./is-object":21,"./request":23,"./request-base":22,"emitter":24,"reduce":26}],21:[function(require,module,exports){
+},{"./is-object":22,"./request":24,"./request-base":23,"emitter":25,"reduce":27}],22:[function(require,module,exports){
 /**
  * Check if `obj` is an object.
  *
@@ -2578,7 +2666,7 @@ function isObject(obj) {
 
 module.exports = isObject;
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /**
  * Module of mixed-in functions shared between node and client code
  */
@@ -2750,7 +2838,7 @@ exports.field = function(name, val) {
   return this;
 };
 
-},{"./is-object":21,"form-data":25}],23:[function(require,module,exports){
+},{"./is-object":22,"form-data":26}],24:[function(require,module,exports){
 // The node and browser modules expose versions of this with the
 // appropriate constructor function bound as first argument
 /**
@@ -2784,7 +2872,7 @@ function request(RequestConstructor, method, url) {
 
 module.exports = request;
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -2947,9 +3035,9 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],25:[function(require,module,exports){
-module.exports = FormData;
 },{}],26:[function(require,module,exports){
+module.exports = FormData;
+},{}],27:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
