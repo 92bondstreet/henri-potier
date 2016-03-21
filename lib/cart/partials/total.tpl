@@ -7,13 +7,13 @@
       <tbody>
         <tr class="cart-subtotal">
           <th>Was</th>
-          <td><del><span class="amount">$125.00</span></del></td>
+          <td><del><span class="amount"><%- locals.was %> &euro;</span></del></td>
         </tr>
 
 
         <tr class="order-total">
           <th>Total</th>
-          <td><strong><span class="amount">$125.00</span></strong> </td>
+          <td><strong><span class="amount"><%- locals.now %> &euro;</span></strong> </td>
         </tr>
 
 

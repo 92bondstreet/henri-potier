@@ -21,7 +21,8 @@ module.exports = class Shop extends EventEmitter {
     this.element = null;
     this.template = template("<article class=\"woocommerce-cart page type-page status-publish hentry language-en\">\n  <div class=\"entry-content static-content\">\n    <div class=\"woocommerce\">\n        <table class=\"shop_table cart\" cellspacing=\"0\">\n          <thead>\n            <tr>\n\n              <th class=\"product-thumbnail\">&nbsp;</th>\n              <th class=\"product-name\">Product</th>\n              <th class=\"product-price\">Price</th>\n              <th class=\"product-quantity\">Quantity</th>\n              <th class=\"product-subtotal\">Total</th>\n              <th class=\"product-remove\">&nbsp;</th>\n            </tr>\n          </thead>\n          <tbody>\n            <% var items = locals.items || []; %>\n              <% for (var index=0, length=items.length; index < length; index++) { %>\n                <% var item = items[index]; %>\n                  <tr class=\"cart_item\" data-hp-isbn=\"<%- item.isbn %>\">\n\n                    <td class=\"product-thumbnail\" width=\"240\" height=\"200\">\n                      <a href=\"javascript:void(0);\"><img src=\"<%- item.cover %>\" class=\"attachment-shop_thumbnail wp-post-image\" alt=\"<%- ~~item.title %>\" /></a>\n                    </td>\n\n                    <td class=\"product-name\">\n                      <spans>\n                        <%- item.title %>\n                          </span>\n                    </td>\n\n                    <td class=\"product-price\">\n                      <span class=\"amount\"><%- item.price %> &euro;</span> </td>\n\n                    <td class=\"product-quantity\">\n                      <div class=\"quantity\">\n                        <input type=\"text\" step=\"1\" min=\"0\" name=\"cart[f57a2f557b098c43f11ab969efe1504b][qty]\" value=\"<%- item.quantity %>\" title=\"Qty\" class=\"input-text qty text\" size=\"4\" />\n                        <div class=\"qty-adjust\">\n                          <a href=\"javascript:void(0);\" class=\"fa fa-angle-up\"></a>\n                          <a href=\"javascript:void(0);\" class=\"fa fa-angle-down\"></a>\n                        </div>\n                      </div>\n                    </td>\n\n                    <td class=\"product-subtotal\">\n                      <span class=\"hp-amount amount\"><%- ~~item.quantity * ~~item.price%> &euro;</span> </td>\n                    <td class=\"product-remove\">\n                      <a href=\"javascript:void(0);\" class=\"remove\" title=\"Remove this item\">x</a> </td>\n                  </tr>\n                  <% } %>\n                    <tr>\n                      <td colspan=\"6\" class=\"actions\">\n                        <button class=\"button\" name=\"update_cart\">Update Cart</button>\n                    </tr>\n\n          </tbody>\n        </table>\n\n\n\n      <div hp-zone-total class=\"cart-collaterals\">\n\n      </div>\n\n    </div>\n  </div>\n</article>\n");
     this.partials = {
-      'empty': template("<article class=\"page type-page status-publish hentry language-en\">\n  <div class=\"entry-content static-content\">\n    <div class=\"woocommerce\">\n      <p class=\"cart-empty\">Your cart is currently empty.</p>\n\n\n      <p class=\"return-to-shop\"><a class=\"button wc-backward\" href=\"http://92bondstreet.github.io/henri-potier\">Return To Shop</a></p>\n    </div>\n  </div>\n</article>\n")
+      'empty': template("<article class=\"page type-page status-publish hentry language-en\">\n  <div class=\"entry-content static-content\">\n    <div class=\"woocommerce\">\n      <p class=\"cart-empty\">Your cart is currently empty.</p>\n\n\n      <p class=\"return-to-shop\"><a class=\"button wc-backward\" href=\"http://92bondstreet.github.io/henri-potier\">Return To Shop</a></p>\n    </div>\n  </div>\n</article>\n"),
+      'total': template("<div class=\"cart_totals \">\n\n  <h2>Cart Totals</h2>\n  <div class=\"cart_totals_wrap\">\n    <table cellspacing=\"0\">\n\n      <tbody>\n        <tr class=\"cart-subtotal\">\n          <th>Was</th>\n          <td><del><span class=\"amount\"><%- locals.was %> &euro;</span></del></td>\n        </tr>\n\n\n        <tr class=\"order-total\">\n          <th>Total</th>\n          <td><strong><span class=\"amount\"><%- locals.now %> &euro;</span></strong> </td>\n        </tr>\n\n\n      </tbody>\n\n    </table>\n  </div>\n\n</div>\n")
     };
   }
 
@@ -42,8 +43,12 @@ module.exports = class Shop extends EventEmitter {
       this.element = this.template(data);
     }
 
-    //set element to zone books
+    //total order with best special offer
+    const totalOrder = data.total || {};
+
+    //set element to zone cart
     document.querySelector('[hp-zone-content]').innerHTML = this.element;
+    document.querySelector('[hp-zone-total]').innerHTML = this.partials.total(totalOrder);
     this.emit('render');
 
     return this;
@@ -60,6 +65,7 @@ let Shop = require('./shop');
 let store = require('henri-potier-store');
 
 const books = store.books;
+const order = store.order;
 
 module.exports = class HenriPotier extends EventEmitter {
   /**
@@ -90,7 +96,7 @@ module.exports = class HenriPotier extends EventEmitter {
     });
 
     this.shop.on('shop.cart.open', () => {
-      this.cart.render({'items': this.items.toJSON()});
+      this.openCart();
     });
 
     return this;
@@ -107,6 +113,24 @@ module.exports = class HenriPotier extends EventEmitter {
       this.items.books = list;
       this.shop.render({'books': list});
     });
+
+    return this;
+  }
+
+  /**
+   * Open cart
+   * @return {HenriPotier}
+   */
+  openCart () {
+    const items = this.items.toJSON();
+
+    order(items)
+      .then(total => {
+        this.cart.render({
+          'items': this.items.toJSON(),
+          'total': total
+        });
+      });
 
     return this;
   }
